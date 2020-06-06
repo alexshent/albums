@@ -2,96 +2,100 @@
 
 namespace app\models;
 
-class User extends \yii\base\BaseObject implements \yii\web\IdentityInterface
+use Yii;
+
+/**
+ * This is the model class for table "User".
+ *
+ * @property int $id
+ * @property string $firstName
+ * @property string $lastName
+ * @property string $username
+ * @property string $password
+ * @property string|null $authKey
+ * @property string|null $accessToken
+ *
+ * @property Album[] $albums
+ */
+class User extends \yii\db\ActiveRecord implements \yii\web\IdentityInterface
 {
-    public $id;
-    public $username;
-    public $password;
-    public $authKey;
-    public $accessToken;
-
-    private static $users = [
-        '100' => [
-            'id' => '100',
-            'username' => 'admin',
-            'password' => 'admin',
-            'authKey' => 'test100key',
-            'accessToken' => '100-token',
-        ],
-        '101' => [
-            'id' => '101',
-            'username' => 'demo',
-            'password' => 'demo',
-            'authKey' => 'test101key',
-            'accessToken' => '101-token',
-        ],
-    ];
-
+    /**
+     * {@inheritdoc}
+     */
+    public static function tableName()
+    {
+        return 'User';
+    }
 
     /**
      * {@inheritdoc}
      */
+    public function rules()
+    {
+        return [
+            [['firstName', 'lastName', 'username', 'password'], 'required'],
+            [['firstName', 'lastName', 'username'], 'string', 'max' => 128],
+            [['password', 'authKey', 'accessToken'], 'string', 'max' => 255],
+            [['username'], 'unique'],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function attributeLabels()
+    {
+        return [
+            'id' => 'ID',
+            'firstName' => 'First Name',
+            'lastName' => 'Last Name',
+            'username' => 'Username',
+            'password' => 'Password',
+            'authKey' => 'Auth Key',
+            'accessToken' => 'Access Token',
+        ];
+    }
+
+    /**
+     * Gets query for [[Albums]].
+     *
+     * @return \yii\db\ActiveQuery
+     */
+    public function getAlbums()
+    {
+        return $this->hasMany(Album::className(), ['user_id' => 'id']);
+    }
+    
     public static function findIdentity($id)
     {
-        return isset(self::$users[$id]) ? new static(self::$users[$id]) : null;
+        return static::findOne($id);
     }
-
-    /**
-     * {@inheritdoc}
-     */
+    
     public static function findIdentityByAccessToken($token, $type = null)
     {
-        foreach (self::$users as $user) {
-            if ($user['accessToken'] === $token) {
-                return new static($user);
-            }
-        }
-
-        return null;
+        return static::findOne(['accessToken' => $token]);
     }
-
-    /**
-     * Finds user by username
-     *
-     * @param string $username
-     * @return static|null
-     */
-    public static function findByUsername($username)
-    {
-        foreach (self::$users as $user) {
-            if (strcasecmp($user['username'], $username) === 0) {
-                return new static($user);
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
+    
+    public static function findByUsername($username) {
+		return static::findOne(['username' => $username]);
+	}
+    
     public function getId()
     {
         return $this->id;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAuthKey()
     {
         return $this->authKey;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function validateAuthKey($authKey)
     {
         return $this->authKey === $authKey;
     }
-
-    /**
+    
+     /**
      * Validates password
      *
      * @param string $password password to validate
