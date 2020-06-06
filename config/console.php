@@ -26,6 +26,10 @@ $config = [
             ],
         ],
         'db' => $db,
+        'urlManager' => [
+			'baseUrl' => 'http://hello.com/',
+			'hostInfo' => 'hostinfo'
+    ]
     ],
     'params' => $params,
     /*
